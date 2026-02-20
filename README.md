@@ -4,7 +4,9 @@ A research operations platform that helps Leanlab Education manage studies, trac
 
 > **Note:** This is a showcase repo. StudyFlow is an internal platform for Leanlab Education — source code is in a private repository.
 
-<!-- Add screenshots here: ![StudyFlow Dashboard](screenshots/dashboard.png) -->
+![StudyFlow Dashboard](screenshots/dashboard.png)
+
+![StudyFlow Study View](screenshots/study-view.png)
 
 ## What It Does
 
