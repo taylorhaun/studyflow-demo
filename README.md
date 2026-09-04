@@ -1,88 +1,48 @@
 # StudyFlow
 
-A research operations platform that helps Leanlab Education manage studies, track participant progress, and streamline researcher workflows. In production at [studyflow.leanlabeducation.org](https://studyflow.leanlabeducation.org).
+Research operations platform for Leanlab Education. Runs the full lifecycle of edtech research studies: recruitment, onboarding and e-signatures, activities and progress tracking, messaging, scheduling, and stipend payments. In production at [studyflow.leanlabeducation.org](https://studyflow.leanlabeducation.org).
 
-> **Note:** This is a showcase repo. StudyFlow is an internal platform for Leanlab Education — source code is in a private repository.
+> Showcase repo. Source is private. Built and maintained as sole engineer.
 
 ![StudyFlow Dashboard](screenshots/dashboard.png)
 
 ![StudyFlow Study View](screenshots/study-view.png)
 
-## What It Does
+## What it does
 
-StudyFlow replaces spreadsheets and manual tracking for education research studies. It serves three user types:
+Three roles: **staff** (researchers), **participants** (teachers), and **champions** (lead teachers who see their school's progress).
 
-- **Participants (teachers)** — View assigned studies, submit work (diaries, surveys, focus group availability), track progress, and see stipend calculations
-- **Champions (lead teachers)** — Monitor progress of teachers at their school
-- **Staff (researchers)** — Manage studies end-to-end: create activities, schedule focus groups, review submissions, send communications, calculate stipends
+- **Studies and activities.** Six activity types (diary, survey, focus group, scheduling, video, task), activity groups, templates, Treatment/Control targeting, progress tracking.
+- **Recruitment.** Public landing pages at `/apply`, eligibility scoring, response management, interest-form email flows.
+- **Onboarding and e-signatures.** Token-based ICA signing with account creation, MOU signing for school partners, onboarding dashboard.
+- **Payments.** Stripe Connect stipend payouts, paper check lifecycle, school grant payments, bracket-based stipend finalization, finance approval workflow, Slack alerts and digests. $250K+ per year flows through it.
+- **Messaging.** Conversation threads with real email threading via Resend inbound webhooks, templates, bulk sends, automated reminders on a daily cron gated by study stage.
+- **Scheduling.** Focus group availability polls, visual calendar, auto-assignment.
 
-## Tech Stack
+## PilotFlow
+
+An AI research-design assistant inside StudyFlow. Finalist, Renaissance Philanthropy AI Talent Accelerator.
+
+- **Layer 1, evidence consultation.** Educators ask about edtech tools or approaches. The query is embedded (Together AI), matched by pgvector cosine similarity against a research corpus plus EdReports and What Works Clearinghouse corpora, and synthesized by Claude. A Gemini query planner routes fast paths.
+- **Layer 2, guided study design.** Step-advancing conversation that produces study artifacts (generate and revise), with attachments, team invites, and per-organization usage metering.
+
+## Engineering
+
+- **Supabase Postgres with RLS on every table.** Role checks live in the database, not just the app.
+- **Quality gates.** Vitest unit and integration, Playwright E2E against Vercel previews, a CI error-count ratchet that fails only if a change adds errors, pre-push hook.
+- **Deploy.** Push to `main` deploys to Vercel and to Netlify as a hot backup, with a documented DNS failover runbook. Money, auth, and schema changes go through PR so CI can block the merge.
+- **Secrets.** Doppler, synced to Vercel. No secret values anywhere in the repo or docs.
+- **Passwordless dev login.** A script mints a session for any user via the admin API, so nobody types passwords, even for test accounts.
+
+## Stack
 
 | Layer | Technology |
-|-------|-----------|
-| **Framework** | Next.js 15, React 19, TypeScript |
-| **Styling** | Tailwind CSS 4, shadcn/ui, Radix UI |
-| **Database** | Supabase (PostgreSQL with Row-Level Security) |
-| **Auth** | Supabase Auth |
-| **File Storage** | Supabase Storage (signed URLs) |
-| **External Data** | Airtable API (bi-directional sync) |
-| **Email** | Resend |
-| **PDF** | jsPDF |
-| **Uploads** | tus-js-client (resumable) |
-| **Testing** | Vitest, React Testing Library, MSW |
-| **Deployment** | Vercel (primary), Netlify (backup) |
-
-## Key Features
-
-### Activity System
-Flexible activity types that researchers can configure per study:
-- **Diary** — journaling prompts with due dates
-- **Survey** — questionnaires with external URL support
-- **Focus Group** — full session management with scheduling polls, participant voting, auto-assignment
-- **Scheduling** — availability polls for coordinating sessions
-
-### Airtable Integration
-Bi-directional sync with Leanlab's existing Airtable workflows:
-- **Studies & People**: Airtable → App (scheduled sync)
-- **Progress & Submissions**: App → Airtable (real-time)
-- Preserves researcher workflows while giving participants a modern interface
-
-### Stipend Calculation
-Automatic bracket-based stipend calculations tied to participant completion:
-- <10% → 10% of stipend
-- <50% → 50% of stipend
-- <80% → 80% of stipend
-- ≥80% → 100% of stipend
-
-### Recruitment & Onboarding
-- Public landing pages for study recruitment (`/apply/[slug]`)
-- Interest form collection and eligibility tracking
-- ICA (Informed Consent Agreement) signing flow
-- Participant onboarding wizard
-
-### Staff Tools
-- Study creation wizard with activity templates
-- Visual calendar for focus group scheduling
-- Submission review and approval
-- In-app messaging and email communications
-- Analytics and progress dashboards
-
-## Architecture
-
-```
-Teacher / Researcher → Next.js 15 (App Router)
-                         ├── Supabase Auth (role-based access)
-                         ├── Supabase PostgreSQL
-                         │     ├── studies, activities, submissions
-                         │     ├── users, study_participants
-                         │     ├── messages, notifications
-                         │     ├── interest_forms, ica_signatures
-                         │     └── Row-Level Security policies
-                         ├── Supabase Storage (file uploads)
-                         ├── Airtable API (bi-directional sync)
-                         └── Resend (transactional email)
-```
-
-## Status
-
-In production. Used by Leanlab Education researchers and participating teachers across multiple active studies.
+|---|---|
+| App | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, shadcn/ui |
+| Database, auth, storage | Supabase (PostgreSQL, RLS, signed URLs) |
+| Payments | Stripe Connect Express |
+| Email | Resend (send + inbound webhooks) |
+| AI | Anthropic Claude, Together AI embeddings, Gemini, pgvector |
+| Integrations | Airtable, Slack, Calendly (signed webhooks), Converge (JWT magic-link SSO) |
+| Hosting | Vercel primary, Netlify backup, Doppler secrets |
+| Testing | Vitest, Playwright, MSW |
